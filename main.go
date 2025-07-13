@@ -48,11 +48,11 @@ func main() {
 
 	serveMux.Handle("/app/", cfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	
-	serveMux.Handle("/healthz", http.HandlerFunc(healthzHandler))
+	serveMux.HandleFunc("GET /healthz", http.HandlerFunc(healthzHandler))
 
-	serveMux.Handle("/metrics", http.HandlerFunc(cfg.hitsHandler))
+	serveMux.HandleFunc("GET /metrics", http.HandlerFunc(cfg.hitsHandler))
 
-	serveMux.Handle("/reset", http.HandlerFunc(cfg.resetHandler))
+	serveMux.HandleFunc("POST /reset", http.HandlerFunc(cfg.resetHandler))
 
 	server := http.Server {
 		Handler: serveMux,

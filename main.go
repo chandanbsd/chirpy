@@ -12,10 +12,10 @@ type apiConfig struct {
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	   return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cfg.fileserverHits.Add(1)
-			next.ServeHTTP(w, r)
-	   })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.fileserverHits.Add(1)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func healthzHandler(resWriter http.ResponseWriter, req *http.Request) {
@@ -32,11 +32,23 @@ func (cfg *apiConfig) hitsHandler(resWriter http.ResponseWriter, req *http.Reque
 	resWriter.Write([]byte(fmt.Sprintf("Hits: %v", cfg.fileserverHits.Load())))
 }
 
-func (cfg *apiConfig)resetHandler(resWriter http.ResponseWriter, req *http.Request) {
-	cfg.fileserverHits.Store(0);
+func (cfg *apiConfig) resetHandler(resWriter http.ResponseWriter, req *http.Request) {
+	cfg.fileserverHits.Store(0)
 }
 
-
+func (cfg *apiConfig) metricsHandler(resWriter http.ResponseWriter, req *http.Request) {
+	header := resWriter.Header()
+	header.Set("Content-Type", "text/html")
+	resWriter.WriteHeader(200)
+	resWriter.Write(
+		[]byte(fmt.Sprintf(`<html>
+  <body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited %d times!</p>
+  </body>
+</html>`, cfg.fileserverHits.Load())),
+	)
+}
 
 func main() {
 	serveMux := http.NewServeMux()
@@ -45,19 +57,17 @@ func main() {
 		fileserverHits: atomic.Int32{},
 	}
 
-
 	serveMux.Handle("/app/", cfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-	
-	serveMux.HandleFunc("GET /admin/metrics", http.StripPrefix("/admin", http.FileServer(http.Dir("."))))
-	serveMux.HandleFunc("GET /api/healthz", http.HandlerFunc(healthzHandler))
+
+	serveMux.HandleFunc("GET /admin/metrics/", http.HandlerFunc(cfg.metricsHandler))
 
 	serveMux.HandleFunc("GET /api/metrics", http.HandlerFunc(cfg.hitsHandler))
 
 	serveMux.HandleFunc("POST /api/reset", http.HandlerFunc(cfg.resetHandler))
 
-	server := http.Server {
+	server := http.Server{
 		Handler: serveMux,
-		Addr: ":8080",
+		Addr:    ":8080",
 	}
 
 	err := server.ListenAndServe()

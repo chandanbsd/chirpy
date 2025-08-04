@@ -12,6 +12,21 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func addEndpoints(serveMux *http.ServeMux, cfg *handler.ApiConfig) {
+	serveMux.Handle("/app/", cfg.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
+
+	serveMux.Handle("/admin/metrics/", http.HandlerFunc(cfg.MetricsHandler))
+	serveMux.Handle("GET /api/healthz", http.HandlerFunc(handler.HealthzHandler))
+
+	serveMux.Handle("GET /api/metrics", http.HandlerFunc(cfg.HitsHandler))
+
+	serveMux.Handle("POST /admin/reset", http.HandlerFunc(cfg.ResetHandler))
+	serveMux.Handle("POST /api/validate_chirp", http.HandlerFunc(cfg.HandleValidateChirp))
+
+	serveMux.Handle("POST /api/user", http.HandlerFunc(cfg.HandleUserCreation))
+
+}
+
 func main() {
 
 	err := godotenv.Load()
@@ -29,19 +44,11 @@ func main() {
 		Queries:        database.New(db),
 	}
 
-	serveMux.Handle("/app/", cfg.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-
-	serveMux.Handle("/admin/metrics/", http.HandlerFunc(cfg.MetricsHandler))
-	serveMux.Handle("GET /api/healthz", http.HandlerFunc(handler.HealthzHandler))
-
-	serveMux.Handle("GET /api/metrics", http.HandlerFunc(cfg.HitsHandler))
-
-	serveMux.Handle("POST /admin/reset", http.HandlerFunc(cfg.ResetHandler))
-	serveMux.Handle("POST /api/validate_chirp", http.HandlerFunc(cfg.HandleValidateChirp))
+	addEndpoints(serveMux, cfg)
 
 	server := http.Server{
 		Handler: serveMux,
-		Addr:    ":8080",
+		Addr:    ":8081",
 	}
 
 	err = server.ListenAndServe()

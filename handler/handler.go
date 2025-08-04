@@ -1,15 +1,18 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync/atomic"
 
+	"github.com/chandanbsd/chirpy/contracts/dto"
+	"github.com/chandanbsd/chirpy/contracts/payload"
 	"github.com/chandanbsd/chirpy/internal/database"
-)
 
-import _ "github.com/lib/pq"
+	_ "github.com/lib/pq"
+)
 
 type ApiConfig struct {
 	FileserverHits atomic.Int32
@@ -92,4 +95,38 @@ func (cfg *ApiConfig) HandleValidateChirp(resWriter http.ResponseWriter, req *ht
 		resWriter.WriteHeader(200)
 		resWriter.Write(dataBytes)
 	}
+}
+
+func (cfg *ApiConfig) HandleUserCreation(resWriter http.ResponseWriter, req *http.Request) {
+	payload := payload.UserCreate{}
+
+	defer req.Body.Close()
+
+	decoder := json.NewDecoder(req.Body)
+
+	err := decoder.Decode(&payload)
+	if err != nil || payload.Email == "" {
+		resWriter.WriteHeader(400)
+		resWriter.Write([]byte("Invalid payload"))
+		return
+	}
+
+	user, err := cfg.Queries.CreateUser(context.Background(), payload.Email)
+
+	if err != nil {
+		resWriter.WriteHeader(400)
+		resWriter.Write([]byte("Failed to insert the user into the database"))
+		return
+	}
+
+	userDto := dto.UserDto{
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		ID:        user.ID.String(),
+	}
+
+	resWriter.WriteHeader(200)
+	dataBytes, _ := json.Marshal(userDto)
+	resWriter.Write(dataBytes)
 }

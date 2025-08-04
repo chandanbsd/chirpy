@@ -23,7 +23,7 @@ func addEndpoints(serveMux *http.ServeMux, cfg *handler.ApiConfig) {
 	serveMux.Handle("POST /admin/reset", http.HandlerFunc(cfg.ResetHandler))
 	serveMux.Handle("POST /api/validate_chirp", http.HandlerFunc(cfg.HandleValidateChirp))
 
-	serveMux.Handle("POST /api/user", http.HandlerFunc(cfg.HandleUserCreation))
+	serveMux.Handle("POST /api/users", http.HandlerFunc(cfg.HandleUserCreation))
 
 }
 
@@ -36,12 +36,14 @@ func main() {
 	}
 	dbURL := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", dbURL)
+	platform := os.Getenv("PLATFORM")
 
 	serveMux := http.NewServeMux()
 
 	var cfg = &handler.ApiConfig{
 		FileserverHits: atomic.Int32{},
 		Queries:        database.New(db),
+		Platform:       platform,
 	}
 
 	addEndpoints(serveMux, cfg)

@@ -17,6 +17,7 @@ import (
 type ApiConfig struct {
 	FileserverHits atomic.Int32
 	Queries        *database.Queries
+	Platform       string
 }
 
 func HealthzHandler(resWriter http.ResponseWriter, req *http.Request) {
@@ -36,6 +37,22 @@ func (cfg *ApiConfig) HitsHandler(resWriter http.ResponseWriter, req *http.Reque
 
 func (cfg *ApiConfig) ResetHandler(resWriter http.ResponseWriter, req *http.Request) {
 	cfg.FileserverHits.Store(0)
+
+	if cfg.Platform != "dev" {
+		resWriter.WriteHeader(403)
+		resWriter.Write([]byte("Not authorized to perform this action on the given environment"))
+		return
+	}
+
+	err := cfg.Queries.DeleteUsers(context.Background())
+	if err != nil {
+		resWriter.WriteHeader(500)
+		resWriter.Write([]byte("Failed to delete the users"))
+		return
+	}
+
+	resWriter.WriteHeader(200)
+	resWriter.Write([]byte("Users deleted"))
 }
 
 func (cfg *ApiConfig) MiddlewareMetricsInc(next http.Handler) http.Handler {
@@ -126,7 +143,7 @@ func (cfg *ApiConfig) HandleUserCreation(resWriter http.ResponseWriter, req *htt
 		ID:        user.ID.String(),
 	}
 
-	resWriter.WriteHeader(200)
+	resWriter.WriteHeader(201)
 	dataBytes, _ := json.Marshal(userDto)
 	resWriter.Write(dataBytes)
 }

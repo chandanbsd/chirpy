@@ -17,14 +17,10 @@ func addEndpoints(serveMux *http.ServeMux, cfg *handler.ApiConfig) {
 
 	serveMux.Handle("/admin/metrics/", http.HandlerFunc(cfg.MetricsHandler))
 	serveMux.Handle("GET /api/healthz", http.HandlerFunc(handler.HealthzHandler))
-
 	serveMux.Handle("GET /api/metrics", http.HandlerFunc(cfg.HitsHandler))
-
 	serveMux.Handle("POST /admin/reset", http.HandlerFunc(cfg.ResetHandler))
-	serveMux.Handle("POST /api/validate_chirp", http.HandlerFunc(cfg.HandleValidateChirp))
-
 	serveMux.Handle("POST /api/users", http.HandlerFunc(cfg.HandleUserCreation))
-
+	serveMux.Handle("POST /api/chirps", http.HandlerFunc(cfg.HandleChirpCreate))
 }
 
 func main() {

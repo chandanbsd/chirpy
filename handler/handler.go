@@ -11,6 +11,8 @@ import (
 	"github.com/chandanbsd/chirpy/contracts/payload"
 	"github.com/chandanbsd/chirpy/internal/database"
 
+	"slices"
+
 	_ "github.com/lib/pq"
 )
 
@@ -146,4 +148,61 @@ func (cfg *ApiConfig) HandleUserCreation(resWriter http.ResponseWriter, req *htt
 	resWriter.WriteHeader(201)
 	dataBytes, _ := json.Marshal(userDto)
 	resWriter.Write(dataBytes)
+}
+
+func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http.Request) {
+	payload := payload.ChirpCreate{}
+	defer req.Body.Close()
+
+	decoder := json.NewDecoder(req.Body)
+
+	badWords := []string{
+		"kerfuffle",
+		"sharbert",
+		"fornax",
+	}
+
+	badWordsMap := make(map[string]bool)
+
+	for _, word := range badWords {
+		badWordsMap[word] = true
+	}
+
+	err := decoder.Decode(&payload)
+	if err != nil || payload.Body == "" {
+		resWriter.WriteHeader(400)
+		resWriter.Write([]byte("Invalid payload"))
+		return
+	}
+
+	if err != nil {
+		resWriter.WriteHeader(500)
+		_, err := resWriter.Write([]byte("The payload is incorrect"))
+		if err != nil {
+			return
+		}
+		return
+	}
+
+	cleanedChirp := string{}
+
+	for index, word := range payload.Body {
+		if badWordsMap[word] != true {
+			cleanedChirp += "****"
+		} else {
+			cleanedChirp +=  word
+		}
+
+		if index != len(payload.Body) - 1 {
+			cleanedChirp += " "
+		}	
+	}
+
+	createChirpInput := &CreateChirpParams {
+		Body:  cleanChirp,
+		UserId: uuid.
+	}
+
+	res := cfg.Queries.CreateChirp(context.Background(), createChirpInput)
+
 }

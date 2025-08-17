@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync/atomic"
 
 	"github.com/chandanbsd/chirpy/contracts/dto"
 	"github.com/chandanbsd/chirpy/contracts/payload"
 	"github.com/chandanbsd/chirpy/internal/database"
-
-	"slices"
 
 	_ "github.com/lib/pq"
 )
@@ -175,22 +174,17 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 		return
 	}
 
-	if err != nil {
-		resWriter.WriteHeader(500)
-		_, err := resWriter.Write([]byte("The payload is incorrect"))
-		if err != nil {
-			return
-		}
-		return
-	}
+	cleanedChirpDto := dto.CleanedChirpDto{}
+	containsProfanity := false
 
-	cleanedChirp := string{}
+	cleanedChirp := ""
 
-	for index, word := range payload.Body {
-		if badWordsMap[word] != true {
+	for index, word := range strings.Split(payload.Body, " ") {
+		if badWordsMap[strings.ToLower(word)] == true {
+			containsProfanity = true
 			cleanedChirp += "****"
 		} else {
-			cleanedChirp +=  word
+			cleanedChirp = cleanedChirp + " " + word
 		}
 
 		if index != len(payload.Body) - 1 {
@@ -198,11 +192,46 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 		}	
 	}
 
-	createChirpInput := &CreateChirpParams {
-		Body:  cleanChirp,
-		UserId: uuid.
+	cleanedChirpDto.CleanedChirp = cleanedChirp
+	cleanedChirpBytes, err := json.Marshal(cleanedChirpDto)
+
+	if containsProfanity && err != nil {
+		resWriter.WriteHeader(400)
+		resWriter.Write(cleanedChirpBytes)
+		return
 	}
 
-	res := cfg.Queries.CreateChirp(context.Background(), createChirpInput)
+	createChirpInput := database.CreateChirpParams {
+		Body:  payload.Body,
+		UserID: payload.UserID,
+	}
 
+	res, err := cfg.Queries.CreateChirp(context.Background(), createChirpInput)
+
+
+	if err != nil {
+		resWriter.WriteHeader(500)
+		resWriter.Write([]byte("Failed to create chirp"))
+		return
+	}
+
+	dtoRes := dto.CreatedChirpDto {
+		ID: res.ID.String(),
+		CreatedAt: res.CreatedAt,
+		UpdatedAt: res.UpdatedAt,
+		Body: res.Body,
+		UserID: res.UserID.String(),
+	}
+
+	resBodyBytes, err := json.Marshal(dtoRes)
+
+	if err != nil {
+		resWriter.WriteHeader(500)
+		resWriter.Write([]byte("Failed to parse json"))
+		return
+	}
+
+
+	resWriter.WriteHeader(201)
+	resWriter.Write(resBodyBytes)
 }

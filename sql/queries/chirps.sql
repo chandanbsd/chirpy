@@ -20,3 +20,12 @@ SELECT id,
        user_id as "user_id"
 FROM chirp
 ORDER BY created_at asc;
+
+-- name: GetChirp :one
+SELECT id,
+       created_at,
+       updated_at,
+       body,
+       user_id
+FROM chirp
+WHERE id = $1;

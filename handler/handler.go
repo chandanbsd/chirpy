@@ -11,6 +11,7 @@ import (
 	"github.com/chandanbsd/chirpy/contracts/dto"
 	"github.com/chandanbsd/chirpy/contracts/payload"
 	"github.com/chandanbsd/chirpy/internal/database"
+	"github.com/google/uuid"
 
 	_ "github.com/lib/pq"
 )
@@ -265,4 +266,49 @@ func (cfg *ApiConfig) HandleChirpsGet(resWriter http.ResponseWriter, req *http.R
 
 	resWriter.WriteHeader(200)
 	resWriter.Write(chirpsBytes)
+}
+
+func (cfg *ApiConfig) HandleChirpGet(resWriter http.ResponseWriter, req *http.Request) {
+	parameterName := "chirpID"
+
+	chirpIdAsString := req.PathValue(parameterName)
+
+	if chirpIdAsString == "" {
+		resWriter.WriteHeader(404)
+		resWriter.Write([]byte("Missing chirp id in the url"))
+		return
+	}
+
+	chirpID, err := uuid.Parse(chirpIdAsString)
+
+	if err != nil {
+		resWriter.WriteHeader(404)
+		resWriter.Write([]byte("The chirp id is invalid"))
+		return
+	}
+
+	chirp, err := cfg.Queries.GetChirp(context.Background(), chirpID)
+	if err != nil {
+		resWriter.WriteHeader(404)
+		resWriter.Write([]byte("CHirp id is not found"))
+		return
+	}
+
+	resChirp := dto.Chirp{
+		ID:        chirp.ID.String(),
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID.String(),
+	}
+
+	resChirpBytes, err := json.Marshal(resChirp)
+	if err != nil {
+		resWriter.WriteHeader(404)
+		resWriter.Write([]byte("cirp may be corrupted"))
+		return
+	}
+
+	resWriter.WriteHeader(200)
+	resWriter.Write(resChirpBytes)
 }

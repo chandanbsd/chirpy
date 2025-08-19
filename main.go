@@ -22,7 +22,7 @@ func addEndpoints(serveMux *http.ServeMux, cfg *handler.ApiConfig) {
 	serveMux.Handle("POST /api/users", http.HandlerFunc(cfg.HandleUserCreation))
 	serveMux.Handle("POST /api/chirps", http.HandlerFunc(cfg.HandleChirpCreate))
 	serveMux.Handle("GET /api/chirps", http.HandlerFunc(cfg.HandleChirpsGet))
-	serveMux.Handle("GET /api/chirps/{chirpID}", http.HandlerFunc(cfg.HandleChirpGet))
+	serveMux.Handle("GET /api/chirps/{chirpID}", http.HandlerFunc(cfg.GetChirpByChirpID))
 }
 
 func main() {

@@ -268,7 +268,7 @@ func (cfg *ApiConfig) HandleChirpsGet(resWriter http.ResponseWriter, req *http.R
 	resWriter.Write(chirpsBytes)
 }
 
-func (cfg *ApiConfig) HandleChirpGet(resWriter http.ResponseWriter, req *http.Request) {
+func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http.Request) {
 	parameterName := "chirpID"
 
 	chirpIdAsString := req.PathValue(parameterName)

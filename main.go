@@ -21,6 +21,7 @@ func addEndpoints(serveMux *http.ServeMux, cfg *handler.ApiConfig) {
 	serveMux.Handle("POST /admin/reset", http.HandlerFunc(cfg.ResetHandler))
 	serveMux.Handle("POST /api/users", http.HandlerFunc(cfg.HandleUserCreation))
 	serveMux.Handle("POST /api/chirps", http.HandlerFunc(cfg.HandleChirpCreate))
+	serveMux.Handle("GET /api/chirps", http.HandlerFunc(cfg.HandleChirpsGet))
 }
 
 func main() {
@@ -46,7 +47,7 @@ func main() {
 
 	server := http.Server{
 		Handler: serveMux,
-		Addr:    ":8081",
+		Addr:    ":8080",
 	}
 
 	err = server.ListenAndServe()

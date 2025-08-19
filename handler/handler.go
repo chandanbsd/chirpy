@@ -233,3 +233,23 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 	resWriter.WriteHeader(201)
 	resWriter.Write(resBodyBytes)
 }
+
+func (cfg *ApiConfig) HandleChirpsGet(resWriter http.ResponseWriter, req *http.Request) {
+	chirps, err := cfg.Queries.GetChirps(context.Background())
+
+	if err != nil {
+		resWriter.WriteHeader(500)
+		resWriter.Write([]byte("Failed to fetch the chirps"))
+		return
+	}
+
+	chirpsBytes, err := json.Marshal(chirps)
+	if err != nil {
+		resWriter.WriteHeader(500)
+		resWriter.Write([]byte("Internal server error"))
+		return
+	}
+
+	resWriter.WriteHeader(200)
+	resWriter.Write(chirpsBytes)
+}

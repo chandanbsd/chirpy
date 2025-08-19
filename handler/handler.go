@@ -243,7 +243,20 @@ func (cfg *ApiConfig) HandleChirpsGet(resWriter http.ResponseWriter, req *http.R
 		return
 	}
 
-	chirpsBytes, err := json.Marshal(chirps)
+	resChirps := []dto.Chirp{}
+
+	for _, chirp := range chirps {
+		newChirp := dto.Chirp{
+			ID:        chirp.ID.String(),
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID.String(),
+		}
+		resChirps = append(resChirps, newChirp)
+	}
+
+	chirpsBytes, err := json.Marshal(resChirps)
 	if err != nil {
 		resWriter.WriteHeader(500)
 		resWriter.Write([]byte("Internal server error"))

@@ -14,9 +14,9 @@ DELETE FROM chirp;
 
 -- name: GetChirps :many
 SELECT id,
-       created_at,
-       updated_at,
-       body,
-       user_id
+       created_at as "created_at",
+       updated_at as "updated_at",
+       body as "body",
+       user_id as "user_id"
 FROM chirp
 ORDER BY created_at asc;

@@ -187,9 +187,9 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 			cleanedChirp = cleanedChirp + " " + word
 		}
 
-		if index != len(payload.Body) - 1 {
+		if index != len(payload.Body)-1 {
 			cleanedChirp += " "
-		}	
+		}
 	}
 
 	cleanedChirpDto.CleanedChirp = cleanedChirp
@@ -201,13 +201,12 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 		return
 	}
 
-	createChirpInput := database.CreateChirpParams {
-		Body:  payload.Body,
+	createChirpInput := database.CreateChirpParams{
+		Body:   payload.Body,
 		UserID: payload.UserID,
 	}
 
 	res, err := cfg.Queries.CreateChirp(context.Background(), createChirpInput)
-
 
 	if err != nil {
 		resWriter.WriteHeader(500)
@@ -215,12 +214,12 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 		return
 	}
 
-	dtoRes := dto.CreatedChirpDto {
-		ID: res.ID.String(),
+	dtoRes := dto.CreatedChirpDto{
+		ID:        res.ID.String(),
 		CreatedAt: res.CreatedAt,
 		UpdatedAt: res.UpdatedAt,
-		Body: res.Body,
-		UserID: res.UserID.String(),
+		Body:      res.Body,
+		UserID:    res.UserID.String(),
 	}
 
 	resBodyBytes, err := json.Marshal(dtoRes)
@@ -230,7 +229,6 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 		resWriter.Write([]byte("Failed to parse json"))
 		return
 	}
-
 
 	resWriter.WriteHeader(201)
 	resWriter.Write(resBodyBytes)

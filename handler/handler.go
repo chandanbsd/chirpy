@@ -312,3 +312,7 @@ func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http
 	resWriter.WriteHeader(200)
 	resWriter.Write(resChirpBytes)
 }
+
+// func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http.Request) {
+
+// }

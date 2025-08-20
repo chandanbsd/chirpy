@@ -10,7 +10,9 @@ import (
 
 	"github.com/chandanbsd/chirpy/contracts/dto"
 	"github.com/chandanbsd/chirpy/contracts/payload"
+	"github.com/chandanbsd/chirpy/internal/auth"
 	"github.com/chandanbsd/chirpy/internal/database"
+	"github.com/chandanbsd/chirpy/internal/helper"
 	"github.com/google/uuid"
 
 	_ "github.com/lib/pq"
@@ -130,7 +132,19 @@ func (cfg *ApiConfig) HandleUserCreation(resWriter http.ResponseWriter, req *htt
 		return
 	}
 
-	user, err := cfg.Queries.CreateUser(context.Background(), payload.Email)
+	hashedPassword, err := auth.HashPassword(payload.Password)
+	if err != nil {
+		resWriter.WriteHeader(500)
+		resWriter.Write([]byte("Failed to create a new user"))
+		return
+	}
+
+	createUserInputModel := database.CreateUserParams{
+		Email:          payload.Email,
+		HashedPassword: hashedPassword,
+	}
+
+	user, err := cfg.Queries.CreateUser(context.Background(), createUserInputModel)
 
 	if err != nil {
 		resWriter.WriteHeader(400)
@@ -316,3 +330,39 @@ func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http
 // func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http.Request) {
 
 // }
+
+func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
+
+	decoder := json.NewDecoder(req.Body)
+	loginPayload := payload.Login{}
+
+	err := decoder.Decode(&loginPayload)
+	if err != nil {
+		helper.ReportError("Failed to deserialize the payload", resWriter, 500)
+	}
+
+	userEntity, err := cfg.Queries.GetUserByEmail(context.Background(), loginPayload.Email.String())
+	if err != nil {
+		helper.ReportError("User may not exist", resWriter, 500)
+	}
+
+	isAuthSuccess := auth.CheckPasswordHash(loginPayload.Password, userEntity.HashedPassword)
+	if isAuthSuccess != nil {
+		helper.ReportError("401 Unauthorized", resWriter, 401)
+		return
+	}
+
+	userLoginSuccessDto := dto.UserLoginSuccess{
+		ID:        userEntity.ID.String(),
+		CreatedAt: userEntity.CreatedAt.String(),
+		UpdatedAt: userEntity.UpdatedAt.String(),
+		Email:     userEntity.Email,
+	}
+
+	userLoginSuccessDtoBytes, err := json.Marshal(userLoginSuccessDto)
+	if err != nil {
+		helper.ReportError("Unexpected failure", resWriter, 500)
+		return
+	}
+	helper.RespondSuccess(resWriter, 200, userLoginSuccessDtoBytes)
+}

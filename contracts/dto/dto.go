@@ -36,3 +36,10 @@ type Chirp struct {
 	Body      string    `json:"body"`
 	UserID    string    `json:"user_id"`
 }
+
+type UserLoginSuccess struct {
+	ID        string `json:"id"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+	Email     string `json:"email"`
+}

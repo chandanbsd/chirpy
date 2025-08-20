@@ -13,6 +13,6 @@ type ChirpCreate struct {
 }
 
 type Login struct {
-	Password string    `json:"password"`
-	Email    uuid.UUID `json:"email"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }

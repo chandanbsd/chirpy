@@ -14,7 +14,7 @@ func HashPassword(password string) (string, error) {
 		return "", errors.New("failed to convert the password to bytes")
 	}
 
-	hashedBytes, err := bcrypt.GenerateFromPassword(passwordBytes, 1000)
+	hashedBytes, err := bcrypt.GenerateFromPassword(passwordBytes, 1)
 
 	if err != nil {
 		return "", errors.New("failed to generate a has from the password")

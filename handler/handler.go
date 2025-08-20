@@ -147,7 +147,7 @@ func (cfg *ApiConfig) HandleUserCreation(resWriter http.ResponseWriter, req *htt
 	user, err := cfg.Queries.CreateUser(context.Background(), createUserInputModel)
 
 	if err != nil {
-		resWriter.WriteHeader(400)
+		resWriter.WriteHeader(500)
 		resWriter.Write([]byte("Failed to insert the user into the database"))
 		return
 	}
@@ -339,11 +339,13 @@ func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&loginPayload)
 	if err != nil {
 		helper.ReportError("Failed to deserialize the payload", resWriter, 500)
+		return
 	}
 
-	userEntity, err := cfg.Queries.GetUserByEmail(context.Background(), loginPayload.Email.String())
+	userEntity, err := cfg.Queries.GetUserByEmail(context.Background(), loginPayload.Email)
 	if err != nil {
 		helper.ReportError("User may not exist", resWriter, 500)
+		return
 	}
 
 	isAuthSuccess := auth.CheckPasswordHash(loginPayload.Password, userEntity.HashedPassword)
@@ -361,7 +363,7 @@ func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
 
 	userLoginSuccessDtoBytes, err := json.Marshal(userLoginSuccessDto)
 	if err != nil {
-		helper.ReportError("Unexpected failure", resWriter, 500)
+		helper.ReportError("Unexpected failure", resWriter, 401)
 		return
 	}
 	helper.RespondSuccess(resWriter, 200, userLoginSuccessDtoBytes)

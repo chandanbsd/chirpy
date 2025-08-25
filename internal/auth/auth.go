@@ -45,6 +45,20 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 
 
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
-		claim := jwt.RegisteredClaims {}
-	token, err := jwt.ParseWithClaims(tokenString, &claim, jwt.SigningMethodHS256)
+	claim := jwt.RegisteredClaims {}
+	token, err := jwt.ParseWithClaims(tokenString, &claim, func(token *jwt.Token) (any, error) {
+		return []byte(tokenSecret), nil
+	})
+
+	userId, err := token.Claims.GetSubject()
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	id, err := uuid.Parse(userId)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	
+	return id, nil
 }

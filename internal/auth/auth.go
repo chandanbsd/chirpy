@@ -25,17 +25,17 @@ func CheckPasswordHash(password string, hash string) error {
 }
 
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
-	
-	claim := jwt.RegisteredClaims {
-		Issuer: "chirpy",
-		IssuedAt: jwt.NewNumericDate(time.Now()),
+
+	claim := jwt.RegisteredClaims{
+		Issuer:    "chirpy",
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
-		Subject: userID.String(),
+		Subject:   userID.String(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 
-	signedString, err := token.SignedString(tokenSecret)
+	signedString, err := token.SignedString([]byte(tokenSecret))
 	if err != nil {
 		return "", errors.New("Failed to generate the auth token")
 	}
@@ -43,9 +43,8 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 	return signedString, nil
 }
 
-
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
-	claim := jwt.RegisteredClaims {}
+	claim := jwt.RegisteredClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, &claim, func(token *jwt.Token) (any, error) {
 		return []byte(tokenSecret), nil
 	})
@@ -59,6 +58,6 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	if err != nil {
 		return uuid.Nil, err
 	}
-	
+
 	return id, nil
 }

@@ -22,6 +22,7 @@ type ApiConfig struct {
 	FileserverHits atomic.Int32
 	Queries        *database.Queries
 	Platform       string
+	JWTSecret      string
 }
 
 func HealthzHandler(resWriter http.ResponseWriter, req *http.Request) {

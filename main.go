@@ -36,6 +36,7 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", dbURL)
 	platform := os.Getenv("PLATFORM")
+	jwtSecret := os.Getenv("SECRET")
 
 	serveMux := http.NewServeMux()
 
@@ -43,6 +44,7 @@ func main() {
 		FileserverHits: atomic.Int32{},
 		Queries:        database.New(db),
 		Platform:       platform,
+		JWTSecret:      jwtSecret,
 	}
 
 	addEndpoints(serveMux, cfg)

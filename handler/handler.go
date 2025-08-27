@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/chandanbsd/chirpy/contracts/dto"
 	"github.com/chandanbsd/chirpy/contracts/payload"
@@ -166,6 +167,18 @@ func (cfg *ApiConfig) HandleUserCreation(resWriter http.ResponseWriter, req *htt
 }
 
 func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http.Request) {
+
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		helper.ReportError("The request does not contain the bearer token", resWriter, 401)
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.JWTSecret)
+	if err != nil {
+		helper.ReportError("The token validation has failurd", resWriter, 401)
+	}
+
 	payload := payload.ChirpCreate{}
 	defer req.Body.Close()
 
@@ -183,7 +196,7 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 		badWordsMap[word] = true
 	}
 
-	err := decoder.Decode(&payload)
+	err = decoder.Decode(&payload)
 	if err != nil || payload.Body == "" {
 		resWriter.WriteHeader(400)
 		resWriter.Write([]byte("Invalid payload"))
@@ -219,7 +232,7 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 
 	createChirpInput := database.CreateChirpParams{
 		Body:   payload.Body,
-		UserID: payload.UserID,
+		UserID: userId,
 	}
 
 	res, err := cfg.Queries.CreateChirp(context.Background(), createChirpInput)
@@ -355,11 +368,33 @@ func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var expirationDuration time.Duration = time.Duration(loginPayload.ExpiresInSeconds) * time.Second
+
+	if loginPayload.ExpiresInSeconds != 0 {
+		expirationDuration = time.Duration(loginPayload.ExpiresInSeconds)
+	}
+
+	if loginPayload.ExpiresInSeconds > 60*60 {
+		expirationDuration = time.Hour
+	}
+
+	token, err := auth.MakeJWT(
+		userEntity.ID,
+		cfg.JWTSecret,
+		expirationDuration,
+	)
+
+	if err != nil {
+		helper.ReportError("Failed to generate a token for the user", resWriter, 500)
+		return
+	}
+
 	userLoginSuccessDto := dto.UserLoginSuccess{
 		ID:        userEntity.ID.String(),
 		CreatedAt: userEntity.CreatedAt.String(),
 		UpdatedAt: userEntity.UpdatedAt.String(),
 		Email:     userEntity.Email,
+		Token:     token,
 	}
 
 	userLoginSuccessDtoBytes, err := json.Marshal(userLoginSuccessDto)

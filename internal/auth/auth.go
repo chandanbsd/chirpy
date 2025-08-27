@@ -75,5 +75,5 @@ func GetBearerToken(headers http.Header) (string, error) {
 
 	tokenString = strings.Trim(tokenString, " ")
 
-	return "", nil
+	return tokenString, nil
 }

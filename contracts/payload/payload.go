@@ -15,5 +15,4 @@ type ChirpCreate struct {
 type Login struct {
 	Password         string `json:"password"`
 	Email            string `json:"email"`
-	ExpiresInSeconds int64  `json:"expires_in_seconds"`
 }

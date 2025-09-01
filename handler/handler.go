@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -368,15 +369,7 @@ func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var expirationDuration time.Duration = time.Duration(loginPayload.ExpiresInSeconds) * time.Second
-
-	if loginPayload.ExpiresInSeconds != 0 {
-		expirationDuration = time.Duration(loginPayload.ExpiresInSeconds)
-	}
-
-	if loginPayload.ExpiresInSeconds > 60*60 {
-		expirationDuration = time.Hour
-	}
+	var expirationDuration time.Duration = time.Hour
 
 	token, err := auth.MakeJWT(
 		userEntity.ID,
@@ -389,12 +382,27 @@ func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		return
+	}
+
+	createRefreshTokenParams := database.CreateRefreshTokenParams {
+		Token: token,
+		UserID: userEntity.ID,
+		ExpiresAt: time.Now().AddDate(0, 1, 0),
+		RevokedAt: sql.NullTime{},
+	}
+
+	cfg.Queries.CreateRefreshToken(context.Background(), createRefreshTokenParams)
+
 	userLoginSuccessDto := dto.UserLoginSuccess{
 		ID:        userEntity.ID.String(),
 		CreatedAt: userEntity.CreatedAt.String(),
 		UpdatedAt: userEntity.UpdatedAt.String(),
 		Email:     userEntity.Email,
 		Token:     token,
+		RefreshToken: refreshToken,
 	}
 
 	userLoginSuccessDtoBytes, err := json.Marshal(userLoginSuccessDto)
@@ -403,4 +411,8 @@ func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
 		return
 	}
 	helper.RespondSuccess(resWriter, 200, userLoginSuccessDtoBytes)
+}
+
+func (cfg *ApiConfig) Refresh(resWriter http.ResponseWriter, req *http.Request) {
+
 }

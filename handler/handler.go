@@ -178,6 +178,7 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 	userId, err := auth.ValidateJWT(token, cfg.JWTSecret)
 	if err != nil {
 		helper.ReportError("The token validation has failurd", resWriter, 401)
+		return
 	}
 
 	payload := payload.ChirpCreate{}
@@ -206,23 +207,20 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 
 	cleanedChirpDto := dto.CleanedChirpDto{}
 	containsProfanity := false
+    cleanedWords := []string{}
 
 	cleanedChirp := ""
 
-	for index, word := range strings.Split(payload.Body, " ") {
-		if badWordsMap[strings.ToLower(word)] == true {
-			containsProfanity = true
-			cleanedChirp += "****"
-		} else {
-			cleanedChirp = cleanedChirp + " " + word
-		}
+    for _, word := range strings.Fields(payload.Body) {
+        if badWordsMap[strings.ToLower(word)] {
+            containsProfanity = true
+            cleanedWords = append(cleanedWords, "****")
+        } else {
+            cleanedWords = append(cleanedWords, word)
+        }
+    }
 
-		if index != len(payload.Body)-1 {
-			cleanedChirp += " "
-		}
-	}
-
-	cleanedChirpDto.CleanedChirp = cleanedChirp
+	cleanedChirpDto.CleanedChirp = strings.Join(cleanedWords, " ")
 	cleanedChirpBytes, err := json.Marshal(cleanedChirpDto)
 
 	if containsProfanity && err != nil {

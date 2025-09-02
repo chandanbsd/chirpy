@@ -8,6 +8,6 @@ func ReportError(message string, resWriter http.ResponseWriter, httpResCode int)
 }
 
 func RespondSuccess(resWriter http.ResponseWriter, httpResCode int, resBodyBytes []byte) {
-	resWriter.WriteHeader(200)
+	resWriter.WriteHeader(httpResCode)
 	resWriter.Write(resBodyBytes)
 }

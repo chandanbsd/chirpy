@@ -50,9 +50,13 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	claim := jwt.RegisteredClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, &claim, func(token *jwt.Token) (any, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &claim, func(token *jwt.Token) (interface{}, error) {
 		return []byte(tokenSecret), nil
 	})
+
+	if err != nil {
+		return uuid.Nil, err
+	}
 
 	userId, err := token.Claims.GetSubject()
 	if err != nil {
@@ -74,13 +78,12 @@ func GetBearerToken(headers http.Header) (string, error) {
 		return "", errors.New("Missing authorization header")
 	}
 
-    tokenString = strings.TrimPrefix(tokenString, "Bearer")
+	tokenString = strings.TrimPrefix(tokenString, "Bearer")
 
-    tokenString = strings.TrimSpace(tokenString)
+	tokenString = strings.TrimSpace(tokenString)
 
 	return tokenString, nil
 }
-
 
 func MakeRefreshToken() (string, error) {
 	randomData := make([]byte, 32)

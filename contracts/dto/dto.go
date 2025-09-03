@@ -38,14 +38,13 @@ type Chirp struct {
 }
 
 type UserLoginSuccess struct {
-	ID        string `json:"id"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	Email     string `json:"email"`
-	Token     string `json:"token"`
+	ID           string `json:"id"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
+	Email        string `json:"email"`
+	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
 }
-
 
 type TokenFromRefresh struct {
 	Token string `json:"token"`

@@ -13,30 +13,33 @@ import (
 )
 
 func addEndpoints(serveMux *http.ServeMux, cfg *handler.ApiConfig) {
-	serveMux.Handle("/app/", cfg.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-
 	serveMux.Handle("/admin/metrics/", http.HandlerFunc(cfg.MetricsHandler))
+	serveMux.Handle("/app/", cfg.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
+	serveMux.Handle("GET /api/chirps", http.HandlerFunc(cfg.HandleChirpsGet))
+	serveMux.Handle("GET /api/chirps/{chirpID}", http.HandlerFunc(cfg.GetChirpByChirpID))
 	serveMux.Handle("GET /api/healthz", http.HandlerFunc(handler.HealthzHandler))
 	serveMux.Handle("GET /api/metrics", http.HandlerFunc(cfg.HitsHandler))
 	serveMux.Handle("POST /admin/reset", http.HandlerFunc(cfg.ResetHandler))
-	serveMux.Handle("POST /api/users", http.HandlerFunc(cfg.HandleUserCreation))
 	serveMux.Handle("POST /api/chirps", http.HandlerFunc(cfg.HandleChirpCreate))
-	serveMux.Handle("GET /api/chirps", http.HandlerFunc(cfg.HandleChirpsGet))
-	serveMux.Handle("GET /api/chirps/{chirpID}", http.HandlerFunc(cfg.GetChirpByChirpID))
 	serveMux.Handle("POST /api/login", http.HandlerFunc(cfg.Login))
 	serveMux.Handle("POST /api/refresh", http.HandlerFunc(cfg.Refresh))
 	serveMux.Handle("POST /api/revoke", http.HandlerFunc(cfg.Revoke))
+	serveMux.Handle("POST /api/users", http.HandlerFunc(cfg.HandleUserCreation))
 }
 
 func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Printf("Failed to load .env filgo dot env: %v\n", err)
+		fmt.Printf("Failed to load .env file: %v\n", err)
 		os.Exit(1)
 	}
 	dbURL := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		panic("Failed to connect to the database; Terminating the application.")
+	}
+
 	platform := os.Getenv("PLATFORM")
 	jwtSecret := os.Getenv("SECRET")
 

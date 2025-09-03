@@ -18,7 +18,7 @@ func HashPassword(password string) (string, error) {
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), 1)
 
 	if err != nil {
-		return "", errors.New("failed to generate a has from the password")
+		return "", errors.New("failed to generate a hash from the password")
 	}
 
 	return string(hashedBytes), err
@@ -42,7 +42,7 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 
 	signedString, err := token.SignedString([]byte(tokenSecret))
 	if err != nil {
-		return "", errors.New("Failed to generate the auth token")
+		return "", errors.New("failed to generate the auth token")
 	}
 
 	return signedString, nil
@@ -75,7 +75,7 @@ func GetBearerToken(headers http.Header) (string, error) {
 	tokenString := headers.Get("Authorization")
 
 	if tokenString == "" {
-		return "", errors.New("Missing authorization header")
+		return "", errors.New("missing authorization header")
 	}
 
 	tokenString = strings.TrimPrefix(tokenString, "Bearer")
@@ -89,7 +89,7 @@ func MakeRefreshToken() (string, error) {
 	randomData := make([]byte, 32)
 	_, err := rand.Read(randomData)
 	if err != nil {
-		return "", errors.New("Failed ot generate random data")
+		return "", errors.New("failed to generate random data")
 	}
 
 	randomString := hex.EncodeToString(randomData)

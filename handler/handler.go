@@ -177,7 +177,7 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 
 	userId, err := auth.ValidateJWT(token, cfg.JWTSecret)
 	if err != nil {
-		helper.ReportError("The token validation has failurd", resWriter, 401)
+		helper.ReportError("the token validation has failed", resWriter, 401)
 		return
 	}
 
@@ -315,7 +315,7 @@ func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http
 	chirp, err := cfg.Queries.GetChirp(context.Background(), chirpID)
 	if err != nil {
 		resWriter.WriteHeader(404)
-		resWriter.Write([]byte("CHirp id is not found"))
+		resWriter.Write([]byte("Chirp id not found"))
 		return
 	}
 
@@ -330,7 +330,7 @@ func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http
 	resChirpBytes, err := json.Marshal(resChirp)
 	if err != nil {
 		resWriter.WriteHeader(404)
-		resWriter.Write([]byte("cirp may be corrupted"))
+		resWriter.Write([]byte("chirp may be corrupted"))
 		return
 	}
 

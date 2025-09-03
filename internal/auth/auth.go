@@ -74,9 +74,9 @@ func GetBearerToken(headers http.Header) (string, error) {
 		return "", errors.New("Missing authorization header")
 	}
 
-	tokenString = strings.Replace(tokenString, "Bearer", "", -1)
+    tokenString = strings.TrimPrefix(tokenString, "Bearer")
 
-	tokenString = strings.Trim(tokenString, " ")
+    tokenString = strings.TrimSpace(tokenString)
 
 	return tokenString, nil
 }

@@ -209,7 +209,6 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 	containsProfanity := false
     cleanedWords := []string{}
 
-	cleanedChirp := ""
 
     for _, word := range strings.Fields(payload.Body) {
         if badWordsMap[strings.ToLower(word)] {
@@ -223,7 +222,7 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 	cleanedChirpDto.CleanedChirp = strings.Join(cleanedWords, " ")
 	cleanedChirpBytes, err := json.Marshal(cleanedChirpDto)
 
-	if containsProfanity && err != nil {
+	if containsProfanity {
 		resWriter.WriteHeader(400)
 		resWriter.Write(cleanedChirpBytes)
 		return

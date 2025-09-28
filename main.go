@@ -26,6 +26,7 @@ func addEndpoints(serveMux *http.ServeMux, cfg *handler.ApiConfig) {
 	serveMux.Handle("POST /api/login", http.HandlerFunc(cfg.Login))
 	serveMux.Handle("POST /api/refresh", http.HandlerFunc(cfg.Refresh))
 	serveMux.Handle("POST /api/revoke", http.HandlerFunc(cfg.Revoke))
+	serveMux.Handle("PUT /api/users", http.HandlerFunc(cfg.UpdateCredential))
 }
 
 func main() {

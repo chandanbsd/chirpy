@@ -16,3 +16,8 @@ type Login struct {
 	Password         string `json:"password"`
 	Email            string `json:"email"`
 }
+
+type UpdateCredentialsPayload struct {
+	Password         string `json:"password"`
+	Email            string `json:"email"`
+}

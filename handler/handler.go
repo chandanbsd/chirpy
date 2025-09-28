@@ -339,10 +339,6 @@ func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http
 	resWriter.Write(resChirpBytes)
 }
 
-// func (cfg *ApiConfig) GetChirpByChirpID(resWriter http.ResponseWriter, req *http.Request) {
-
-// }
-
 func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
 
 	decoder := json.NewDecoder(req.Body)
@@ -470,4 +466,40 @@ func (cfg *ApiConfig) Revoke(resWriter http.ResponseWriter, req *http.Request) {
 	}
 
 	helper.RespondSuccess(resWriter, 204, []byte{})
+}
+
+func (cfg *ApiConfig) UpdateCredential(resWriter http.ResponseWriter, req *http.Request) {
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		helper.ReportError("Invalid authentication token", resWriter, 500)
+	}
+
+	userGuid, err := auth.ValidateJWT(token, cfg.JWTSecret)
+	if err != nil {
+		helper.ReportError("Invalid authentication token", resWriter, 500)
+	}
+
+	decoder := json.NewDecoder(req.Body)
+	payload := payload.UpdateCredentialsPayload{}
+	err = decoder.Decode(&payload)
+	if err != nil {
+		helper.ReportError("Failed to decode the request body", resWriter, 500)
+	}
+
+	hashedPassword, err := auth.HashPassword(payload.Password)
+	if err != nil {
+		helper.ReportError("Failed to generate the password hash", resWriter, 500)
+	}
+
+	userCredentialsParam := database.UpdateUserCredentialParams{
+		ID: userGuid,
+		Email: payload.Email,
+		HashedPassword: hashedPassword,
+	}
+
+	payload.Password = hashedPassword
+	err = cfg.Queries.UpdateUserCredential(context.Background(), userCredentialsParam)
+	if err != nil {
+		helper.ReportError("Failed to update credentials", resWriter, 500)
+	}
 }

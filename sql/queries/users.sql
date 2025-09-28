@@ -20,3 +20,15 @@ SELECT id,
        hashed_password
 FROM users
 WHERE email = $1;
+
+-- name: DoesUserExist :one
+SELECT id
+from users
+WHERE id = $1;
+
+-- name: UpdateUserCredential :exec
+UPDATE users
+SET email = $2,
+    hashed_password = $3
+WHERE id = $1;
+

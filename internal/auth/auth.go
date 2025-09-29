@@ -53,6 +53,9 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &claim, func(token *jwt.Token) (any, error) {
 		return []byte(tokenSecret), nil
 	})
+	if err != nil {
+		return uuid.Nil, errors.New("Malformed auth token")
+	}
 
 	userId, err := token.Claims.GetSubject()
 	if err != nil {

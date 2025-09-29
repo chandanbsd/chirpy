@@ -471,24 +471,28 @@ func (cfg *ApiConfig) Revoke(resWriter http.ResponseWriter, req *http.Request) {
 func (cfg *ApiConfig) UpdateCredential(resWriter http.ResponseWriter, req *http.Request) {
 	token, err := auth.GetBearerToken(req.Header)
 	if err != nil {
-		helper.ReportError("Invalid authentication token", resWriter, 500)
+		helper.ReportError("Invalid authentication token", resWriter, 401)
+		return
 	}
 
 	userGuid, err := auth.ValidateJWT(token, cfg.JWTSecret)
 	if err != nil {
-		helper.ReportError("Invalid authentication token", resWriter, 500)
+		helper.ReportError("Invalid authentication token", resWriter, 401)
+		return
 	}
 
 	decoder := json.NewDecoder(req.Body)
 	payload := payload.UpdateCredentialsPayload{}
 	err = decoder.Decode(&payload)
 	if err != nil {
-		helper.ReportError("Failed to decode the request body", resWriter, 500)
+		helper.ReportError("Failed to decode the request body", resWriter, 401)
+		return
 	}
 
 	hashedPassword, err := auth.HashPassword(payload.Password)
 	if err != nil {
 		helper.ReportError("Failed to generate the password hash", resWriter, 500)
+		return
 	}
 
 	userCredentialsParam := database.UpdateUserCredentialParams{
@@ -501,5 +505,21 @@ func (cfg *ApiConfig) UpdateCredential(resWriter http.ResponseWriter, req *http.
 	err = cfg.Queries.UpdateUserCredential(context.Background(), userCredentialsParam)
 	if err != nil {
 		helper.ReportError("Failed to update credentials", resWriter, 500)
+		return
 	}
+
+	user, err := cfg.Queries.GetUserById(context.Background(), userGuid)
+	if err != nil {
+		helper.ReportError("Failed to generate the dto", resWriter, 500)
+	}
+	dto := dto.UserDto{
+		Email: user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		ID: user.ID.String(),
+	}
+
+	dtoBytes, err := json.Marshal(dto)
+
+	helper.RespondSuccess(resWriter, 200, dtoBytes)
 }

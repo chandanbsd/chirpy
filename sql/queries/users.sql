@@ -32,3 +32,11 @@ SET email = $2,
     hashed_password = $3
 WHERE id = $1;
 
+-- name: GetUserById :one
+SELECT id,
+    created_at,
+    updated_at,
+    email
+from users
+where id = $1;
+

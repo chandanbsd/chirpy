@@ -29,3 +29,8 @@ SELECT id,
        user_id
 FROM chirp
 WHERE id = $1;
+
+-- name: DeleteChirp :exec
+DELETE
+from chirp
+where id = $1;

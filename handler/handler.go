@@ -523,3 +523,49 @@ func (cfg *ApiConfig) UpdateCredential(resWriter http.ResponseWriter, req *http.
 
 	helper.RespondSuccess(resWriter, 200, dtoBytes)
 }
+
+func (cfg *ApiConfig) DeleteChirp(resWriter http.ResponseWriter, req *http.Request) {
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		helper.ReportError("Invalid authentication token", resWriter, 401)
+		return
+	}
+
+	userGuid, err := auth.ValidateJWT(token, cfg.JWTSecret)
+	if err != nil {
+		helper.ReportError("Invalid authentication token", resWriter, 401)
+		return
+	}
+
+	parameterName := "chirpID"
+	chirpIdAsString := req.PathValue(parameterName)
+	if chirpIdAsString == "" {
+		helper.ReportError("Chirp does not exist", resWriter, 401)
+		return
+	}
+
+	chirpID, err := uuid.Parse(chirpIdAsString)
+	if err != nil {
+		helper.ReportError("The selected chirp is not valid", resWriter, 401)
+		return		
+	}
+
+	chirp, err := cfg.Queries.GetChirp(context.Background(), chirpID)
+	if err != nil {
+		helper.ReportError("Chirp not found", resWriter, 500)
+		return		
+	}
+
+	if chirp.UserID != userGuid {
+		helper.ReportError("Not authorized to delete the chirp", resWriter, 403)
+		return		
+	}
+
+	err = cfg.Queries.DeleteChirp(context.Background(), chirpID)
+	if err != nil {
+		helper.ReportError("Chirp not found", resWriter, 500)
+		return		
+	}
+	
+	helper.ReportError("Chirp not found", resWriter, 204)
+}

@@ -28,6 +28,7 @@ func addEndpoints(serveMux *http.ServeMux, cfg *handler.ApiConfig) {
 	serveMux.Handle("POST /api/revoke", http.HandlerFunc(cfg.Revoke))
 	serveMux.Handle("PUT /api/users", http.HandlerFunc(cfg.UpdateCredential))
 	serveMux.Handle("DELETE /api/chirps/{chirpID}", http.HandlerFunc(cfg.DeleteChirp))
+	serveMux.Handle("POST /api/polka/webhooks", http.HandlerFunc(cfg.ChirpRedPaymentWebhook))
 }
 
 func main() {

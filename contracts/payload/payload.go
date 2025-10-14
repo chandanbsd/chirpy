@@ -21,3 +21,18 @@ type UpdateCredentialsPayload struct {
 	Password         string `json:"password"`
 	Email            string `json:"email"`
 }
+
+// {
+//   "event": "user.upgraded",
+//   "data": {
+//     "user_id": "3311741c-680c-4546-99f3-fc9efac2036c"
+//   }
+// }
+
+type UpgradeUserToChirpRedWebhook struct {
+	Event	string `json:"event"`
+	Data struct {
+		UserID string `json:"user_id"`
+	} `json:"data"`
+
+}

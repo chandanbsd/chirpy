@@ -21,6 +21,16 @@ SELECT id,
 FROM chirp
 ORDER BY created_at asc;
 
+-- name: GetChirpsByAuthorID :many
+SELECT id,
+       created_at as "created_at",
+       updated_at as "updated_at",
+       body as "body",
+       user_id as "user_id"
+FROM chirp
+WHERE user_id = $1
+ORDER BY created_at asc;
+
 -- name: GetChirp :one
 SELECT id,
        created_at,

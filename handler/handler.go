@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -160,6 +161,7 @@ func (cfg *ApiConfig) HandleUserCreation(resWriter http.ResponseWriter, req *htt
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		ID:        user.ID.String(),
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	resWriter.WriteHeader(201)
@@ -262,7 +264,36 @@ func (cfg *ApiConfig) HandleChirpCreate(resWriter http.ResponseWriter, req *http
 }
 
 func (cfg *ApiConfig) HandleChirpsGet(resWriter http.ResponseWriter, req *http.Request) {
-	chirps, err := cfg.Queries.GetChirps(context.Background())
+	authorID := req.URL.Query().Get("author_id")
+	sortOrder := req.URL.Query().Get("sort")
+
+	chirps := []database.Chirp{}
+	var err error
+
+
+	if authorID != "" {
+
+		authorUUID, err := uuid.Parse(authorID)
+		if err != nil {
+			resWriter.WriteHeader(500)
+			resWriter.Write([]byte("Author id is not valid"))
+			return
+		}
+		chirps, err = cfg.Queries.GetChirpsByAuthorID(context.Background(), authorUUID)
+	} else {
+		chirps, err = cfg.Queries.GetChirps(context.Background())
+	}
+
+	if sortOrder == "" || sortOrder == "asc" {
+		sort.Slice(chirps, func (i, j int) bool {
+			return chirps[i].CreatedAt.Before(chirps[j].CreatedAt)
+		})
+	} else {
+		sort.Slice(chirps, func (i, j int) bool {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		})
+	}
+
 
 	if err != nil {
 		resWriter.WriteHeader(500)
@@ -400,6 +431,7 @@ func (cfg *ApiConfig) Login(resWriter http.ResponseWriter, req *http.Request) {
 		Email:     userEntity.Email,
 		Token:     token,
 		RefreshToken: refreshToken,
+		IsChirpyRed: userEntity.IsChirpyRed,
 	}
 
 	userLoginSuccessDtoBytes, err := json.Marshal(userLoginSuccessDto)
@@ -517,6 +549,7 @@ func (cfg *ApiConfig) UpdateCredential(resWriter http.ResponseWriter, req *http.
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		ID: user.ID.String(),
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	dtoBytes, err := json.Marshal(dto)
@@ -568,4 +601,41 @@ func (cfg *ApiConfig) DeleteChirp(resWriter http.ResponseWriter, req *http.Reque
 	}
 	
 	helper.ReportError("Chirp not found", resWriter, 204)
+}
+
+func (cfg *ApiConfig) ChirpRedPaymentWebhook(resWriter http.ResponseWriter, req *http.Request) {
+	payload := payload.UpgradeUserToChirpRedWebhook{}
+	defer req.Body.Close()
+	decoder := json.NewDecoder(req.Body)
+
+	err := decoder.Decode(&payload)
+	if err != nil {
+		helper.ReportError("Invalid payload", resWriter, 500)
+		return
+	}
+
+	if payload.Event != "user.upgraded" {
+		helper.RespondSuccess(resWriter, 204, []byte{})
+		return
+	}
+
+	userIDFromPayload, err := uuid.Parse(payload.Data.UserID)
+	if err != nil {
+		helper.ReportError("Failed to upgrade the user, context admin", resWriter, 500)
+		return
+	}
+
+	_, err = cfg.Queries.GetUserById(context.Background(), userIDFromPayload)
+	if err != nil {
+		helper.ReportError("User not found", resWriter, 404)
+		return
+	}
+
+	err = cfg.Queries.UpgradeUserToChirpyRed(context.Background(), userIDFromPayload)
+	if err != nil {
+		helper.ReportError("Failed to upgrade the user, context admin", resWriter, 500)
+		return
+	}
+
+	helper.RespondSuccess(resWriter, 204, []byte{})
 }

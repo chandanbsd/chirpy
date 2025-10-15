@@ -26,6 +26,7 @@ type ApiConfig struct {
 	Queries        *database.Queries
 	Platform       string
 	JWTSecret      string
+	PolkaKey       string
 }
 
 func HealthzHandler(resWriter http.ResponseWriter, req *http.Request) {
@@ -604,11 +605,22 @@ func (cfg *ApiConfig) DeleteChirp(resWriter http.ResponseWriter, req *http.Reque
 }
 
 func (cfg *ApiConfig) ChirpRedPaymentWebhook(resWriter http.ResponseWriter, req *http.Request) {
+	apiKey, err := auth.GetAPIKey(req.Header)
+	if err != nil {
+		helper.ReportError("Failed to upgrade the user, context admin", resWriter, 401)
+		return
+	}
+
+	if apiKey != cfg.PolkaKey {
+		helper.ReportError("Missing webhook api key", resWriter, 401)
+		return
+	}
+
 	payload := payload.UpgradeUserToChirpRedWebhook{}
 	defer req.Body.Close()
 	decoder := json.NewDecoder(req.Body)
 
-	err := decoder.Decode(&payload)
+	err = decoder.Decode(&payload)
 	if err != nil {
 		helper.ReportError("Invalid payload", resWriter, 500)
 		return

@@ -95,3 +95,16 @@ func MakeRefreshToken() (string, error) {
 	randomString := hex.EncodeToString(randomData)
 	return randomString, nil
 }
+
+func GetAPIKey(headers http.Header) (string, error) {
+	apiKey := headers.Get("Authorization")
+
+	if apiKey == "" {
+		return "", errors.New("Missing authorization header for the web hook.")
+	}
+
+
+	apiKey = strings.Replace(apiKey, "ApiKey", "", 1)
+	apiKey = strings.Trim(apiKey, " \t\n\r")
+	return apiKey, nil
+}

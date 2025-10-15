@@ -42,6 +42,7 @@ func main() {
 	db, err := sql.Open("postgres", dbURL)
 	platform := os.Getenv("PLATFORM")
 	jwtSecret := os.Getenv("SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 
 	serveMux := http.NewServeMux()
 
@@ -50,6 +51,7 @@ func main() {
 		Queries:        database.New(db),
 		Platform:       platform,
 		JWTSecret:      jwtSecret,
+		PolkaKey: polkaKey,
 	}
 
 	addEndpoints(serveMux, cfg)
